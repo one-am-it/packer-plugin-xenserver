@@ -63,7 +63,7 @@ func TestBuilderPrepare_Defaults(t *testing.T) {
 	}
 }
 
-func TestBuilderPrepare_DiskSize(t *testing.T) {
+func TestBuilderPrepare_Disks(t *testing.T) {
 	var b Builder
 	config := testConfig()
 
@@ -76,11 +76,18 @@ func TestBuilderPrepare_DiskSize(t *testing.T) {
 		t.Fatalf("bad err: %s", err)
 	}
 
-	if b.config.DiskSize != 40000 {
-		t.Fatalf("bad size: %d", b.config.DiskSize)
+	if len(b.config.Disks) != 1 {
+		t.Fatalf("bad disk count: %d", len(b.config.Disks))
 	}
 
-	config["disk_size"] = 60000
+	config["disks"] = []map[string]interface{}{
+		{
+			"name":      "foo",
+			"size":      60000 * 1024 * 1024,
+			"read_only": false,
+		},
+	}
+
 	b = Builder{}
 	_, warns, err = b.Prepare(config)
 	if len(warns) > 0 {
@@ -90,8 +97,8 @@ func TestBuilderPrepare_DiskSize(t *testing.T) {
 		t.Fatalf("should not have error: %s", err)
 	}
 
-	if b.config.DiskSize != 60000 {
-		t.Fatalf("bad size: %d", b.config.DiskSize)
+	if b.config.Disks[0].Size != 60000*1024*1024 {
+		t.Fatalf("bad size: %d", b.config.Disks[0].Size)
 	}
 }
 

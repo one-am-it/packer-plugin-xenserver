@@ -17,7 +17,7 @@ type StepCreateInstance struct {
 	AssumePreInstalledOS bool
 
 	instance *xsclient.VMRef
-	vdi      *xsclient.VDIRef
+	vdi      []*xsclient.VDIRef
 }
 
 func (self *StepCreateInstance) Run(ctx context.Context, state multistep.StateBag) multistep.StepAction {
@@ -111,7 +111,7 @@ func (self *StepCreateInstance) Run(ctx context.Context, state multistep.StateBa
 			return multistep.ActionHalt
 		}
 
-		// Create VDI for the instance
+		// Create VDIs for the instance
 		sr, err := config.GetSR(c)
 
 		if err != nil {
@@ -121,27 +121,30 @@ func (self *StepCreateInstance) Run(ctx context.Context, state multistep.StateBa
 
 		ui.Say(fmt.Sprintf("Using the following SR for the VM: %s", sr))
 
-		vdi, err := c.GetClient().VDI.Create(c.GetSessionRef(), xenapi.VDIRecord{
-			NameLabel:   "Packer-disk",
-			VirtualSize: int(config.DiskSize * 1024 * 1024),
-			Type:        "user",
-			Sharable:    false,
-			ReadOnly:    false,
-			SR:          sr,
-			OtherConfig: map[string]string{
-				"temp": "temp",
-			},
-		})
-		if err != nil {
-			ui.Error(fmt.Sprintf("Unable to create packer disk VDI: %s", err.Error()))
-			return multistep.ActionHalt
-		}
-		self.vdi = &vdi
+		for _, disk := range config.Disks {
+			vdi, err := c.GetClient().VDI.Create(c.GetSessionRef(), xenapi.VDIRecord{
+				NameLabel:       disk.Name,
+				NameDescription: disk.Description,
+				VirtualSize:     int(disk.Size),
+				Type:            "user",
+				Sharable:        false,
+				ReadOnly:        disk.ReadOnly,
+				SR:              sr,
+				OtherConfig: map[string]string{
+					"temp": "temp",
+				},
+			})
+			if err != nil {
+				ui.Error(fmt.Sprintf("Unable to create packer disk VDI %s: %s", disk.Name, err.Error()))
+				return multistep.ActionHalt
+			}
+			self.vdi = append(self.vdi, &vdi)
 
-		err = ConnectVdi(c, instance, vdi, xsclient.VbdTypeDisk)
-		if err != nil {
-			ui.Error(fmt.Sprintf("Unable to connect packer disk VDI: %s", err.Error()))
-			return multistep.ActionHalt
+			err = ConnectVdi(c, instance, vdi, xsclient.VbdTypeDisk)
+			if err != nil {
+				ui.Error(fmt.Sprintf("Unable to connect packer disk VDI %s: %s", disk.Name, err.Error()))
+				return multistep.ActionHalt
+			}
 		}
 	}
 
@@ -253,10 +256,12 @@ func (self *StepCreateInstance) Cleanup(state multistep.StateBag) {
 	}
 
 	if self.vdi != nil {
-		ui.Say("Destroying VDI")
-		err := c.GetClient().VDI.Destroy(c.GetSessionRef(), *self.vdi)
-		if err != nil {
-			ui.Error(err.Error())
+		ui.Say("Destroying VDIs")
+		for _, vdi := range self.vdi {
+			err := c.GetClient().VDI.Destroy(c.GetSessionRef(), *vdi)
+			if err != nil {
+				ui.Error(err.Error())
+			}
 		}
 	}
 }

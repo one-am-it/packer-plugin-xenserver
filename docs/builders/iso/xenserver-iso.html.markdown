@@ -86,8 +86,13 @@ each category, the available options are alphabetized and described.
   run `xe template-list`. Setting the correct value hints to XenServer how to
   optimize the virtual hardware to work best with that operating system.
 
-* `disk_size` (integer) - The size, in megabytes, of the hard disk to create
-  for the VM. By default, this is 40000 (about 40 GB).
+* `disks` (array) - The disks to create for the VM.
+  If no disks are specified, by default a 40000MB disk will be created.
+  The following options can be set for each disk:
+    * `name` (string) - The name of the disk
+    * `description` (string) - The description of the disk
+    * `size` (integer) - The size of the disk in bytes
+    * `read_only` (bool) - Whether the disk should be read only
 
 * `firmware` (string) - Whether to use `bios` or `uefi` as the boot firmware
   for the resulting VM. Defaults to `bios`.
@@ -159,7 +164,7 @@ each category, the available options are alphabetized and described.
 
 * `platform_args` (object of key/value strings) - The platform args.
   Defaults to 
-```javascript
+```json
 {
     "viridian": "false",
     "nx": "true",

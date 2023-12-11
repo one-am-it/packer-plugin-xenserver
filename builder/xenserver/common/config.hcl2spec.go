@@ -98,6 +98,7 @@ type FlatConfig struct {
 	VCPUsMax                  *uint             `mapstructure:"vcpus_max" cty:"vcpus_max" hcl:"vcpus_max"`
 	VCPUsAtStartup            *uint             `mapstructure:"vcpus_atstartup" cty:"vcpus_atstartup" hcl:"vcpus_atstartup"`
 	VMMemory                  *uint             `mapstructure:"vm_memory" cty:"vm_memory" hcl:"vm_memory"`
+	Disks                     []FlatDiskConfig  `mapstructure:"disks" cty:"disks" hcl:"disks"`
 	DiskSize                  *uint             `mapstructure:"disk_size" cty:"disk_size" hcl:"disk_size"`
 	CloneTemplate             *string           `mapstructure:"clone_template" cty:"clone_template" hcl:"clone_template"`
 	VMOtherConfig             map[string]string `mapstructure:"vm_other_config" cty:"vm_other_config" hcl:"vm_other_config"`
@@ -212,6 +213,7 @@ func (*FlatConfig) HCL2Spec() map[string]hcldec.Spec {
 		"vcpus_max":                    &hcldec.AttrSpec{Name: "vcpus_max", Type: cty.Number, Required: false},
 		"vcpus_atstartup":              &hcldec.AttrSpec{Name: "vcpus_atstartup", Type: cty.Number, Required: false},
 		"vm_memory":                    &hcldec.AttrSpec{Name: "vm_memory", Type: cty.Number, Required: false},
+		"disks":                        &hcldec.BlockListSpec{TypeName: "disks", Nested: hcldec.ObjectSpec((*FlatDiskConfig)(nil).HCL2Spec())},
 		"disk_size":                    &hcldec.AttrSpec{Name: "disk_size", Type: cty.Number, Required: false},
 		"clone_template":               &hcldec.AttrSpec{Name: "clone_template", Type: cty.String, Required: false},
 		"vm_other_config":              &hcldec.AttrSpec{Name: "vm_other_config", Type: cty.Map(cty.String), Required: false},
@@ -224,6 +226,35 @@ func (*FlatConfig) HCL2Spec() map[string]hcldec.Spec {
 		"source_path":                  &hcldec.AttrSpec{Name: "source_path", Type: cty.String, Required: false},
 		"firmware":                     &hcldec.AttrSpec{Name: "firmware", Type: cty.String, Required: false},
 		"skip_set_template":            &hcldec.AttrSpec{Name: "skip_set_template", Type: cty.Bool, Required: false},
+	}
+	return s
+}
+
+// FlatDiskConfig is an auto-generated flat version of DiskConfig.
+// Where the contents of a field with a `mapstructure:,squash` tag are bubbled up.
+type FlatDiskConfig struct {
+	Name        *string `mapstructure:"name" cty:"name" hcl:"name"`
+	Description *string `mapstructure:"description" cty:"description" hcl:"description"`
+	Size        *uint   `mapstructure:"size" cty:"size" hcl:"size"`
+	ReadOnly    *bool   `mapstructure:"read_only" cty:"read_only" hcl:"read_only"`
+}
+
+// FlatMapstructure returns a new FlatDiskConfig.
+// FlatDiskConfig is an auto-generated flat version of DiskConfig.
+// Where the contents a fields with a `mapstructure:,squash` tag are bubbled up.
+func (*DiskConfig) FlatMapstructure() interface{ HCL2Spec() map[string]hcldec.Spec } {
+	return new(FlatDiskConfig)
+}
+
+// HCL2Spec returns the hcl spec of a DiskConfig.
+// This spec is used by HCL to read the fields of DiskConfig.
+// The decoded values from this spec will then be applied to a FlatDiskConfig.
+func (*FlatDiskConfig) HCL2Spec() map[string]hcldec.Spec {
+	s := map[string]hcldec.Spec{
+		"name":        &hcldec.AttrSpec{Name: "name", Type: cty.String, Required: false},
+		"description": &hcldec.AttrSpec{Name: "description", Type: cty.String, Required: false},
+		"size":        &hcldec.AttrSpec{Name: "size", Type: cty.Number, Required: false},
+		"read_only":   &hcldec.AttrSpec{Name: "read_only", Type: cty.Bool, Required: false},
 	}
 	return s
 }

@@ -53,8 +53,34 @@ func (self *Builder) Prepare(raws ...interface{}) (params []string, warns []stri
 		self.config.RawInstallTimeout = "200m"
 	}
 
-	if self.config.DiskSize == 0 {
-		self.config.DiskSize = 40000
+	if len(self.config.Disks) == 0 {
+		var sizeMB uint = 40000
+		if self.config.DiskSize != 0 {
+			sizeMB = self.config.DiskSize
+		}
+
+		self.config.Disks = []xscommon.DiskConfig{
+			{
+				Name:        "Packer-disk",
+				Description: "Packer disk",
+				Size:        sizeMB * 1024 * 1024,
+				ReadOnly:    false,
+			},
+		}
+	}
+
+	for i := range self.config.Disks {
+		if self.config.Disks[i].Name == "" {
+			self.config.Disks[i].Name = fmt.Sprintf("Packer-disk-%d", i)
+		}
+
+		if self.config.Disks[i].Description == "" {
+			self.config.Disks[i].Description = "Disk created by Packer"
+		}
+
+		if self.config.Disks[i].Size == 0 {
+			self.config.Disks[i].Size = 40000 * 1024 * 1024
+		}
 	}
 
 	if self.config.VCPUsMax == 0 {
